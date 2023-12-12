@@ -20,7 +20,6 @@ package io.maestro3.agent.dao;
 
 import com.google.common.util.concurrent.AtomicLongMap;
 import io.maestro3.sdk.internal.util.StringUtils;
-import com.mongodb.client.MongoCollection;
 import com.mongodb.client.result.UpdateResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -221,10 +220,6 @@ public abstract class BaseDao<T> {
         Assert.notNull(idx, "idx can't be null.");
         Assert.isTrue(idx.getIndexKeys().keySet().size() > 0, "idx.indexKeys are empty.");
 
-        MongoCollection<Document> collection = this.mongo().getCollection(this.collectionName);
-        if (collection == null) {
-            collection = this.mongo().createCollection(this.collectionName);
-        }
         this.mongo().indexOps(this.collectionName).ensureIndex(idx);
     }
 
