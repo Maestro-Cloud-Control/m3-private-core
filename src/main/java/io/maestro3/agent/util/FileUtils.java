@@ -22,6 +22,10 @@ import org.springframework.util.FileCopyUtils;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Comparator;
+import java.util.stream.Stream;
 
 
 public final class FileUtils {
@@ -43,6 +47,23 @@ public final class FileUtils {
             return new String(data, StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static boolean clearDirectory(final Path directoryPath) {
+        try (Stream<Path> walk = Files.walk(directoryPath)) {
+            return walk.sorted(Comparator.reverseOrder())
+                    .allMatch(FileUtils::deleteFile);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static boolean deleteFile(final Path filePath) {
+        try {
+            return filePath.toFile().delete();
+        } catch (Exception e) {
+            return false;
         }
     }
 }

@@ -15,20 +15,22 @@
  *
  */
 
-package io.maestro3.agent.dao;
+package io.maestro3.agent.dao.impl;
 
+import io.maestro3.agent.dao.ISshKeyPairDao;
 import io.maestro3.agent.model.base.PrivateCloudType;
 import io.maestro3.agent.model.base.SshKeyPair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 
-@Service
+@Component
 public class SshKeyPairDao implements ISshKeyPairDao {
     protected static final String COLLECTION = "SshKeyPair";
     protected MongoTemplate template;

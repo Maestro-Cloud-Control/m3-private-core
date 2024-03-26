@@ -17,7 +17,7 @@
 
 package io.maestro3.agent.scheduler;
 
-import io.maestro3.agent.dao.LockDao;
+import io.maestro3.agent.dao.impl.LockDao;
 import io.maestro3.agent.model.base.Lock;
 import io.maestro3.agent.model.base.PrivateCloudType;
 import org.slf4j.Logger;

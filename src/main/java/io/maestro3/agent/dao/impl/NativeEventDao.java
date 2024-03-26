@@ -15,49 +15,36 @@
  *
  */
 
-package io.maestro3.agent.dao;
+package io.maestro3.agent.dao.impl;
 
-import io.maestro3.agent.model.base.Lock;
-import io.maestro3.agent.model.base.PrivateCloudType;
+import io.maestro3.agent.dao.INativeEventDao;
+import io.maestro3.agent.model.base.NativeAuditEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 
 @Service
-public class LockDao implements ILockDao {
-    private static final Logger LOG = LoggerFactory.getLogger(LockDao.class);
+public class NativeEventDao implements INativeEventDao {
+    private static final Logger LOG = LoggerFactory.getLogger(NativeEventDao.class);
 
-    protected static final String COLLECTION = "ScheduleLocks";
+    protected static final String COLLECTION = "NativeEvents";
     protected MongoTemplate template;
 
     @Autowired
-    public LockDao(MongoTemplate template) {
+    public NativeEventDao(MongoTemplate template) {
         this.template = template;
     }
 
-    @Override
-    public List<Lock> findAll() {
-        return template.findAll(Lock.class, COLLECTION);
-    }
 
     @Override
-    public boolean save(Lock lock) {
+    public void save(NativeAuditEvent event) {
         try {
-            template.insert(lock, COLLECTION);
-            return true;
+            template.insert(event, COLLECTION);
         } catch (Exception ex) {
-            LOG.debug("Lock error", ex);
-            return false;
+            LOG.error("Failed to save event", ex);
         }
-    }
-
-    @Override
-    public void delete(PrivateCloudType cloudType, String lockName) {
-        template.remove(new Lock(cloudType.name(), lockName), COLLECTION);
     }
 }

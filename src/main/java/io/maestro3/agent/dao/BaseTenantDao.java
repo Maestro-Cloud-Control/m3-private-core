@@ -61,6 +61,12 @@ public abstract class BaseTenantDao<TENANT extends ITenant> implements ITenantRe
     }
 
     @Override
+    public ITenant findById(String id) {
+        Criteria criteria = Criteria.where("id").is(id);
+        return template.findOne(Query.query(criteria), ITenant.class, COLLECTION);
+    }
+
+    @Override
     public void save(ITenant tenant) {
         template.save(tenant, COLLECTION);
     }

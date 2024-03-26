@@ -15,35 +15,42 @@
  *
  */
 
-package io.maestro3.agent.dao;
+package io.maestro3.agent.dao.impl;
 
-import io.maestro3.agent.model.base.NativeAuditEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.maestro3.agent.dao.IInstanceRunRecordDao;
+import io.maestro3.agent.model.base.InstanceRunRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 
 @Service
-public class NativeEventDao implements INativeEventDao {
-    private static final Logger LOG = LoggerFactory.getLogger(NativeEventDao.class);
+public class InstanceRunRecordDao implements IInstanceRunRecordDao {
 
-    protected static final String COLLECTION = "NativeEvents";
+    protected static final String COLLECTION = "InstanceRunRecord";
     protected MongoTemplate template;
 
     @Autowired
-    public NativeEventDao(MongoTemplate template) {
+    public InstanceRunRecordDao(MongoTemplate template) {
         this.template = template;
     }
 
+    @Override
+    public List<InstanceRunRecord> findAll() {
+        return template.findAll(InstanceRunRecord.class, COLLECTION);
+    }
 
     @Override
-    public void save(NativeAuditEvent event) {
-        try {
-            template.insert(event, COLLECTION);
-        } catch (Exception ex) {
-            LOG.error("Failed to save event", ex);
-        }
+    public void save(InstanceRunRecord lock) {
+        template.insert(lock, COLLECTION);
+    }
+
+    @Override
+    public void deleteAll() {
+        template.remove(Query.query(Criteria.where("_id").exists(true)), COLLECTION);
     }
 }
