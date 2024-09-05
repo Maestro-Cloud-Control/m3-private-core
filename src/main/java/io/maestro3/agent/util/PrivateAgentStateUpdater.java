@@ -23,10 +23,8 @@ import io.maestro3.agent.dao.ITenantRepository;
 import io.maestro3.agent.model.base.IRegion;
 import io.maestro3.agent.model.base.ITenant;
 import io.maestro3.agent.model.base.PrivateCloudType;
-import io.maestro3.sdk.internal.util.CollectionUtils;
-import io.maestro3.sdk.internal.util.DateUtils;
-import io.maestro3.sdk.internal.util.JsonUtils;
-import io.maestro3.sdk.v3.model.audit.AuditEventGroupType;
+import io.maestro3.agent.util.conversion.tenant.BaseTenantInfoConverter;
+import io.maestro3.agent.util.conversion.tenant.TenantInfoConverter;
 import io.maestro3.cadf.ICadfAction;
 import io.maestro3.cadf.model.CadfActions;
 import io.maestro3.cadf.model.CadfAttachment;
@@ -35,6 +33,10 @@ import io.maestro3.cadf.model.CadfEventType;
 import io.maestro3.cadf.model.CadfOutcomes;
 import io.maestro3.cadf.model.CadfResource;
 import io.maestro3.cadf.model.CadfResourceTypes;
+import io.maestro3.sdk.internal.util.CollectionUtils;
+import io.maestro3.sdk.internal.util.DateUtils;
+import io.maestro3.sdk.internal.util.JsonUtils;
+import io.maestro3.sdk.v3.model.audit.AuditEventGroupType;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,6 +50,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
@@ -58,20 +61,21 @@ public class PrivateAgentStateUpdater implements IPrivateAgentStateUpdater {
     private static final String ACTIVATION_DATE = "activationDate";
     private static final String STATUS = "status";
     private static final String REGION_NAME = "regionName";
-    private static final String TENANT_NAME = "tenantName";
     private static final String RELATED_TENANTS = "relatedTenants";
 
     private static final CadfResource SYSTEM = CadfResource.builder()
-        .ofType(CadfResourceTypes.system())
-        .withId(ID_NAMESPACE + "SYSTEM")
-        .withName("System")
-        .build();
+            .ofType(CadfResourceTypes.system())
+            .withId(ID_NAMESPACE + "SYSTEM")
+            .withName("System")
+            .build();
 
     private static final CadfResource UNKNOWN = CadfResource.builder()
-        .ofType(CadfResourceTypes.unknown())
-        .withId(ID_NAMESPACE + "UNKNOWN")
-        .withName("Unknown")
-        .build();
+            .ofType(CadfResourceTypes.unknown())
+            .withId(ID_NAMESPACE + "UNKNOWN")
+            .withName("Unknown")
+            .build();
+
+    private static final TenantInfoConverter<ITenant> DEFAULT_TENANT_INFO_CONVERTER = new BaseTenantInfoConverter();
 
     private String exchangeName;
     private String syncQueue;
@@ -82,18 +86,20 @@ public class PrivateAgentStateUpdater implements IPrivateAgentStateUpdater {
     private ICadfAuditEventSender auditEventSender;
     private IRegionRepository regionRepository;
     private ITenantRepository tenantRepository;
+    private Map<PrivateCloudType, TenantInfoConverter<?>> tenantInfoConverters;
 
     @Autowired
     public PrivateAgentStateUpdater(
-        @Value("${private.agent.rabbit.m3api.exchange}") String exchangeName,
-        @Value("${private.agent.rabbit.m3api.sync.queue}") String syncQueue,
-        @Value("${private.agent.rabbit.m3api.async.queue}") String asyncQueue,
-        @Value("${server.m3api.response.queue.name}") String responseQueue,
-        @Value("${server.m3api.access.key}") String keyName,
-        @Value("${private.agent.name}") String privateAgentName,
-        ICadfAuditEventSender auditEventSender,
-        IRegionRepository regionRepository,
-        ITenantRepository tenantRepository) {
+            @Value("${private.agent.rabbit.m3api.exchange}") String exchangeName,
+            @Value("${private.agent.rabbit.m3api.sync.queue}") String syncQueue,
+            @Value("${private.agent.rabbit.m3api.async.queue}") String asyncQueue,
+            @Value("${server.m3api.response.queue.name}") String responseQueue,
+            @Value("${server.m3api.access.key}") String keyName,
+            @Value("${private.agent.name}") String privateAgentName,
+            ICadfAuditEventSender auditEventSender,
+            IRegionRepository regionRepository,
+            ITenantRepository tenantRepository,
+            List<TenantInfoConverter<?>> tenantInfoConverters) {
         this.exchangeName = exchangeName;
         this.regionRepository = regionRepository;
         this.tenantRepository = tenantRepository;
@@ -103,6 +109,8 @@ public class PrivateAgentStateUpdater implements IPrivateAgentStateUpdater {
         this.responseQueue = responseQueue;
         this.keyName = keyName;
         this.auditEventSender = auditEventSender;
+        this.tenantInfoConverters = tenantInfoConverters.stream()
+                .collect(Collectors.toMap(TenantInfoConverter::getPrivateCloudType, Function.identity()));
     }
 
     @PostConstruct
@@ -129,7 +137,7 @@ public class PrivateAgentStateUpdater implements IPrivateAgentStateUpdater {
     public Map<PrivateCloudType, List<Map<String, Object>>> getState() {
         List<IRegion> regions = regionRepository.findAll();
         Map<String, List<ITenant>> tenants = ((List<ITenant>) tenantRepository.findAll()).stream()
-            .collect(Collectors.groupingBy(ITenant::getRegionId));
+                .collect(Collectors.groupingBy(ITenant::getRegionId));
         Map<PrivateCloudType, List<Map<String, Object>>> result = new HashMap<>();
         for (IRegion region : regions) {
             List<Map<String, Object>> regionInfos = result.computeIfAbsent(region.getCloud(), (cloudType) -> new ArrayList<>());
@@ -148,10 +156,9 @@ public class PrivateAgentStateUpdater implements IPrivateAgentStateUpdater {
         List<ITenant> regionTenants = tenants.get(region.getId());
         if (CollectionUtils.isNotEmpty(regionTenants)) {
             for (ITenant regionTenant : regionTenants) {
-                Map<String, Object> data = new HashMap<>();
-                data.put(TENANT_NAME, regionTenant.getTenantAlias());
-                data.put(ACTIVATION_DATE, convertToTimestampFrom(regionTenant.getId()));
-                data.put(STATUS, regionTenant.getTenantState());
+                TenantInfoConverter<?> converter = tenantInfoConverters.getOrDefault(regionTenant.getCloud(),
+                        DEFAULT_TENANT_INFO_CONVERTER);
+                Map<String, Object> data = converter.getTenantInfo(regionTenant);
                 relatedTenantsInfo.add(data);
             }
         }
@@ -169,26 +176,26 @@ public class PrivateAgentStateUpdater implements IPrivateAgentStateUpdater {
                                                   CadfResource target,
                                                   List<CadfAttachment> attachments) {
         return CadfAuditEvent.builder()
-            .withId(ID_NAMESPACE + actionId)
-            .withAction(action)
-            .withEventTime(DateUtils.formatDate(date, DateUtils.CADF_FORMAT_TIME))
-            .withEventType(CadfEventType.ACTIVITY)
-            .withInitiator(UNKNOWN)
-            .withObserver(SYSTEM)
-            .withOutcome(CadfOutcomes.success())
-            .withAttachments(attachments)
-            .withMeasurements(new ArrayList<>())
-            .withTags(new ArrayList<>())
-            .withTarget(target)
-            .build();
+                .withId(ID_NAMESPACE + actionId)
+                .withAction(action)
+                .withEventTime(DateUtils.formatDate(date, DateUtils.CADF_FORMAT_TIME))
+                .withEventType(CadfEventType.ACTIVITY)
+                .withInitiator(UNKNOWN)
+                .withObserver(SYSTEM)
+                .withOutcome(CadfOutcomes.success())
+                .withAttachments(attachments)
+                .withMeasurements(new ArrayList<>())
+                .withTags(new ArrayList<>())
+                .withTarget(target)
+                .build();
     }
 
     private CadfResource createTarget(String privateAgentName) {
         return CadfResource.builder()
-            .ofType(CadfResourceTypes.privateAgent())
-            .withId(ID_NAMESPACE + privateAgentName)
-            .withName(privateAgentName)
-            .build();
+                .ofType(CadfResourceTypes.privateAgent())
+                .withId(ID_NAMESPACE + privateAgentName)
+                .withName(privateAgentName)
+                .build();
     }
 
     private List<CadfAttachment> getAgentAttachments(boolean forceUpdate, Map<PrivateCloudType, List<Map<String, Object>>> tenantsAndRegionsInfo) {
