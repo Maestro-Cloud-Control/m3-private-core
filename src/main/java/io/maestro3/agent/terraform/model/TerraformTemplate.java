@@ -4,12 +4,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-import team.syndicate.terraform.integration.model.TemplateFormat;
-import team.syndicate.terraform.integration.model.TemplateStatus;
-import team.syndicate.terraform.integration.model.TerraformTemplateStorageInfo;
-import team.syndicate.terraform.integration.model.TerraformTemplateVariable;
-import team.syndicate.terraform.integration.model.TerraformUserVariable;
-import team.syndicate.terraform.integration.task.TerraformTask;
+import team.syndicate.terraform.engine.terraform.integration.model.TemplateFormat;
+import team.syndicate.terraform.engine.terraform.integration.model.TemplateStatus;
+import team.syndicate.terraform.engine.terraform.integration.model.TerraformTemplateStorageInfo;
+import team.syndicate.terraform.engine.terraform.integration.model.TerraformTemplateVariable;
+import team.syndicate.terraform.engine.terraform.integration.model.TerraformUserVariable;
+import team.syndicate.terraform.engine.terraform.integration.task.TerraformTask;
 
 import java.util.HashMap;
 import java.util.Map;

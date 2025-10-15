@@ -1,8 +1,9 @@
 package io.maestro3.agent.terraform.model;
 
-import team.syndicate.terraform.integration.model.ITerraformStackInfo;
-import team.syndicate.terraform.integration.model.TemplateStatus;
-import team.syndicate.terraform.integration.model.TerraformUserVariable;
+
+import team.syndicate.terraform.engine.terraform.integration.model.ITerraformStackInfo;
+import team.syndicate.terraform.engine.terraform.integration.model.TemplateStatus;
+import team.syndicate.terraform.engine.terraform.integration.model.TerraformUserVariable;
 
 import java.util.Map;
 import java.util.Set;
@@ -59,4 +60,9 @@ public class TerraformStackInfoWrapper implements ITerraformStackInfo {
     public void setSubDirectory(String subDirectory) {
         stack.withSubDirectory(subDirectory);
     }
+
+    public String getServiceEntryId() {
+        return stack.getServiceEntryId();
+    }
+
 }

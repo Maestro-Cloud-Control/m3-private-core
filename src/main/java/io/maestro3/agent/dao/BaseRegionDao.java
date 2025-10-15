@@ -64,6 +64,13 @@ public abstract class BaseRegionDao<R extends IRegion> implements IRegionReposit
     }
 
     @Override
+    public IRegion findByAliasInCloud(String alias, String cloud) {
+        Criteria criteria = Criteria.where("regionAlias").is(alias)
+                .and("cloud").is(cloud);
+        return template.findOne(Query.query(criteria), IRegion.class, COLLECTION);
+    }
+
+    @Override
     public List<IAmqpSupportedRegion> findAllAmqpRegions() {
         Criteria criteria = Criteria.where("rabbitNotificationConfig").exists(true);
         return template.find(Query.query(criteria), IAmqpSupportedRegion.class, COLLECTION);

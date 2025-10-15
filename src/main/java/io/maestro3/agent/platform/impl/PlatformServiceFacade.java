@@ -18,17 +18,10 @@
 package io.maestro3.agent.platform.impl;
 
 import io.maestro3.agent.cadf.ICadfAuditEventSender;
-import io.maestro3.agent.dao.IPlatformServiceDao;
 import io.maestro3.agent.dao.IPlatformServiceEntryDao;
-import io.maestro3.agent.dao.IRegionRepository;
-import io.maestro3.agent.dao.ITenantRepository;
-import io.maestro3.agent.model.base.ITenant;
+import io.maestro3.agent.exception.ReadableAgentException;
 import io.maestro3.agent.platform.IPlatformServiceFacade;
-import io.maestro3.agent.platform.model.PlatformService;
 import io.maestro3.agent.platform.model.PlatformServiceEntry;
-import io.maestro3.agent.terraform.manager.ITerraformStackService;
-import io.maestro3.agent.terraform.model.TerraformStack;
-import io.maestro3.agent.tf.integration.model.TemplateStatus;
 import io.maestro3.agent.util.CadfUtils;
 import io.maestro3.cadf.ICadfAction;
 import io.maestro3.cadf.model.CadfActions;
@@ -42,6 +35,7 @@ import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import team.syndicate.terraform.engine.terraform.integration.model.TemplateStatus;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,59 +50,17 @@ import java.util.Optional;
 @Service
 public class PlatformServiceFacade implements IPlatformServiceFacade {
 
-    private final IPlatformServiceDao serviceDao;
     private final IPlatformServiceEntryDao entryDao;
     private final ICadfAuditEventSender sender;
-    private final ITerraformStackService stackService;
     private final String agentName;
-    private final ITenantRepository tenantRepository;
-    private final IRegionRepository regionRepository;
 
     @Autowired
-    public PlatformServiceFacade(IPlatformServiceDao serviceDao, IPlatformServiceEntryDao entryDao,
+    public PlatformServiceFacade(IPlatformServiceEntryDao entryDao,
                                  ICadfAuditEventSender sender,
-                                 ITenantRepository tenantRepository,
-                                 ITerraformStackService stackService,
-                                 IRegionRepository regionRepository,
                                  @Value("${private.agent.name}") String agentName) {
         this.agentName = agentName;
-        this.serviceDao = serviceDao;
         this.entryDao = entryDao;
-        this.tenantRepository = tenantRepository;
-        this.stackService = stackService;
-        this.regionRepository = regionRepository;
         this.sender = sender;
-    }
-
-    @Override
-    public PlatformService findServiceByName(String name) {
-        return serviceDao.findByName(name).orElse(null);
-    }
-
-    @Override
-    public PlatformServiceEntry findServiceEntryById(String id) {
-        return entryDao.findById(id).orElse(null);
-    }
-
-    @Override
-    public void saveEntry(PlatformService service) {
-        serviceDao.save(service);
-    }
-
-    @Override
-    public void saveEntry(PlatformServiceEntry entry) {
-        entryDao.save(entry);
-    }
-
-    @Override
-    public void deleteService(String name) {
-        serviceDao.delete(name);
-    }
-
-    @Override
-    public String getRelatedStack(String entryId) {
-        Optional<TerraformStack> stackOptional = stackService.findByEntryId(entryId);
-        return stackOptional.map(TerraformStack::getStackId).orElse(null);
     }
 
     @Override
@@ -117,7 +69,6 @@ public class PlatformServiceFacade implements IPlatformServiceFacade {
         entryOptional.ifPresent(
                 entry -> sender.sendCadfAuditEvent(prepareAudit(CadfActions.delete(), entry, null),
                         Collections.singletonList(AuditEventGroupType.PRIVATE_AGENT)));
-        entryDao.delete(id);
     }
 
     @Override
@@ -132,7 +83,7 @@ public class PlatformServiceFacade implements IPlatformServiceFacade {
 
     private CadfAuditEvent prepareAudit(ICadfAction action, PlatformServiceEntry entry, TemplateStatus status) {
         String actionId = new ObjectId().toHexString();
-        CadfResource target = CadfUtils.createTarget(CadfResourceTypes.data().template().stack(), entry.getId());
+        CadfResource target = CadfUtils.createTarget(CadfResourceTypes.data().template().stack(), entry.getServiceEntryId());
 
         Date date = new Date();
         List<CadfMeasurement> measurements = Collections.emptyList();
@@ -156,12 +107,10 @@ public class PlatformServiceFacade implements IPlatformServiceFacade {
 
     private List<CadfAttachment> resolveServiceAttachments(PlatformServiceEntry entry, TemplateStatus status) {
         List<CadfAttachment> result = new ArrayList<>();
-        String tenantId = entry.getTenant();
-        ITenant tenant = tenantRepository.findById(tenantId);
-        result.add(CadfUtils.createAttachment("string", "id", entry.getId()));
-        result.add(CadfUtils.createAttachment("string", "cloud", tenant.getCloud().name()));
-        result.add(CadfUtils.createAttachment("string", "region", entry.getRegion()));
-        result.add(CadfUtils.createAttachment("string", "tenant", tenant.getTenantAlias()));
+        result.add(CadfUtils.createAttachment("string", "id", entry.getServiceEntryId()));
+        result.add(CadfUtils.createAttachment("string", "cloud", entry.getCloud()));
+        result.add(CadfUtils.createAttachment("string", "region", entry.getRegionName()));
+        result.add(CadfUtils.createAttachment("string", "tenant", entry.getTenantDisplayName()));
         result.add(CadfUtils.createAttachment("date", "createdDate", new Date().getTime()));
         result.add(CadfUtils.createAttachment("string", "state", getStateString(status)));
         result.add(CadfUtils.createAttachment("string", "info", getInfoString(status)));

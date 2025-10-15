@@ -57,6 +57,26 @@ public class ChefInstanceDao implements IChefInstanceDao {
     }
 
     @Override
+    public void setAdditionalData(ChefInstance instance, String data) {
+        Update update = new Update();
+        update.set("additionalData", data);
+
+        mongo.updateFirst(query(where("instanceId").is(instance.getInstanceId())), update, TABLE);
+
+        instance.setAdditionalData(data);
+    }
+
+
+    @Override
+    public List<ChefInstance> findByTenantInRegionAndRole(String tenantName, String regionName, String role) {
+        Query query = Query.query(Criteria.where("tenantName").is(tenantName)
+                .and("regionName").is(regionName)
+                .and("roles").is(role));
+        return mongo.find(query, ChefInstance.class, TABLE);
+    }
+
+
+    @Override
     public List<ChefInstance> findAllInRegion(String tenantName, String regionId) {
         Query query = Query.query(Criteria.where("tenantName").is(tenantName)
                 .and("regionId").is(regionId));
@@ -94,9 +114,10 @@ public class ChefInstanceDao implements IChefInstanceDao {
     }
 
     @Override
-    public void setAutoConfigurationState(ChefInstance instance, AutoConfigurationState state) {
+    public void setAutoConfigurationStateAndMeta(ChefInstance instance, AutoConfigurationState state) {
         Update update = new Update();
         update.set("autoConfigurationState", state);
+        update.set("metaExist", instance.isMetaExist());
 
         mongo.findAndModify(query(where("instanceId").is(instance.getInstanceId())), update,
                 ChefInstance.class, TABLE);

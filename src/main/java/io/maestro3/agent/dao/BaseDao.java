@@ -1,288 +1,102 @@
-
-/*
- * Copyright 2023 Maestro Cloud Control LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
 package io.maestro3.agent.dao;
 
-import com.google.common.util.concurrent.AtomicLongMap;
-import io.maestro3.sdk.internal.util.StringUtils;
 import com.mongodb.client.result.UpdateResult;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.bson.Document;
+import io.maestro3.sdk.internal.util.Assert;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.index.Index;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.util.Assert;
-import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
 
 public abstract class BaseDao<T> {
 
-    private static final Logger LOG = LogManager.getLogger(BaseDao.class);
-
-    private static AtomicLongMap<String> writeOperations = AtomicLongMap.create();
-
+    private final Class<T> entityClass;
     private final String collectionName;
-    private final String collectionPreventedUpdates;
-    private final Class<T> clazz;
 
     @Autowired
-    protected MongoTemplate template;
+    protected MongoTemplate mongoTemplate;
 
-    public BaseDao(String collectionName, Class<T> clazz) {
+    public BaseDao(String collectionName, Class<T> entityClass) {
         Assert.hasText(collectionName, "collectionName can't be null or empty.");
-        Assert.notNull(clazz, "clazz can't be null.");
+        Assert.notNull(entityClass, "clazz can't be null.");
         this.collectionName = collectionName;
-        this.collectionPreventedUpdates = collectionName + "_prevented_updates_count";
-        this.clazz = clazz;
+        this.entityClass = entityClass;
     }
 
-    public static Map<String, Long> getStatistics() {
-        return new HashMap<>(writeOperations.asMap());
-    }
-
-    public static void clearStatistics() {
-        writeOperations.clear();
-    }
-
-    public void save(T object) {
-        Assert.notNull(object, "object can't be null.");
-        mongo().save(object, collectionName);
-        writeOperations.incrementAndGet(collectionName);
-    }
-
-    public void update(T object) {
-        Assert.notNull(object, "object can't be null.");
-
-        if (shouldNotBeUpdated(object)) {
-            increasePreventedUpdatesCount();
-        }
-
-        mongo().save(object, collectionName);
-        writeOperations.incrementAndGet(collectionName);
-    }
-
-    protected boolean shouldNotBeUpdated(T object) {
-        try {
-
-            Document dbObject = new Document();
-            mongo().getConverter().write(object, dbObject);
-            String json = dbObject.toJson();
-            if (StringUtils.isBlank(json)) {
-                return false;
-            }
-        } catch (Exception ex) {
-            LOG.error(String.format("Failed to calculate digest for %s", collectionName), ex);
-        }
-        return false;
-    }
-
-    public T findById(String id) {
-        Assert.hasText(id, "entityID can't be null or empty.");
-        return mongo().findById(new ObjectId(id), this.clazz, collectionName);
+    public T save(T entity) {
+        return mongoTemplate.save(entity);
     }
 
     public List<T> findAll() {
-        return mongo().findAll(this.clazz, collectionName);
+        return mongoTemplate.findAll(entityClass);
+    }
+
+    public Optional<T> findById(String id) {
+        return Optional.ofNullable(mongoTemplate.findById(id, entityClass));
+    }
+
+    public void delete(T entity) {
+        mongoTemplate.remove(entity);
     }
 
     public void delete(String id) {
         Assert.hasText(id, "id can't be null or empty.");
-
-        mongo().remove(Query.query(Criteria.where("_id").is(new ObjectId(id))), collectionName);
-        writeOperations.incrementAndGet(collectionName);
+        mongoTemplate.remove(Query.query(Criteria.where("_id").is(new ObjectId(id))), collectionName);
     }
 
-    public void delete(List<String> ids) {
-        Assert.notEmpty(ids, "ids can't be null or empty");
-
-        remove(Query.query(Criteria.where("_id").in(ids)));
-    }
-
-    protected void remove(Query query) {
-        track(query);
-        mongo().remove(query, collectionName);
-        writeOperations.incrementAndGet(collectionName);
-    }
-
-    public long count() {
-        return mongo().count(new Query(), collectionName);
-    }
-
-    public void insert(T object) {
+    public void update(T object) {
         Assert.notNull(object, "object can't be null.");
-        mongo().insert(object, this.collectionName);
-        writeOperations.incrementAndGet(collectionName);
+        mongoTemplate.save(object, collectionName);
     }
 
-    public void insertAll(Collection<? extends T> objects) {
-        Assert.notEmpty(objects, "collection can't be null or empty.");
-        mongo().insert(objects, collectionName);
-        writeOperations.incrementAndGet(collectionName);
+    protected Optional<T> findOne(Query query) {
+        return Optional.ofNullable(mongoTemplate.findOne(query, entityClass));
+    }
+
+    protected List<T> find(Query query) {
+        return mongoTemplate.find(query, entityClass);
     }
 
     protected long count(Query query) {
-        track(query);
-        return mongo().count(query, collectionName);
+        return mongoTemplate.count(query, entityClass);
     }
 
-    public List<T> findAll(Query query) {
-        track(query);
-        return mongo().find(query, this.clazz, this.collectionName);
-    }
-
-    protected List<String> objectIdToStringCollection(List<ObjectId> dbResult) {
-        if (dbResult == null) {
-            return null;
-        }
-        List<String> result = new LinkedList<>();
-        for (ObjectId id : dbResult) {
-            result.add(id.toString());
-        }
-        return result;
-    }
-
-    protected <Z extends T> List<Z> findAll(Query query, Class<Z> clazz) {
-        track(query);
-        return mongo().find(query, clazz, this.collectionName);
-    }
-
-    protected T findAndModify(Query query, Update update) {
-        Assert.notNull(update, "update can't be null.");
-        Assert.isTrue(!update.getUpdateObject().keySet().isEmpty(), "update must not be empty (it will delete the document!)");
-        track(query);
-        writeOperations.incrementAndGet(collectionName);
-        return mongo().findAndModify(query, update, this.clazz, this.collectionName);
-    }
-
-    protected T findOne(Query query) {
-        track(query);
-        return mongo().findOne(query, this.clazz, this.collectionName);
-    }
-
-    protected <Z extends T> Z findOne(Query query, Class<Z> clazz) {
-        track(query);
-        return mongo().findOne(query, clazz, this.collectionName);
-    }
-
-    public void modifyOne(Query query, Update update) {
-        Assert.notNull(update, "update can't be null.");
-        Assert.isTrue(!update.getUpdateObject().keySet().isEmpty(), "update must not be empty (it will delete the document!)");
-        track(query);
-        writeOperations.incrementAndGet(collectionName);
-        mongo().updateFirst(query, update, this.collectionName);
-    }
-
-    protected UpdateResult upsert(Query query, Update update) {
-        Assert.notNull(update, "update can't be null.");
-        track(query);
-        writeOperations.incrementAndGet(collectionName);
-        return mongo().upsert(query, update, this.collectionName);
+    protected UpdateResult updateFirst(Query query, Update update) {
+        return mongoTemplate.updateFirst(query, update, entityClass);
     }
 
     public void modifyAll(Query query, Update update) {
         Assert.notNull(update, "update can't be null.");
         Assert.isTrue(!update.getUpdateObject().keySet().isEmpty(), "update must not be empty (it will delete the document!)");
-        track(query);
-        writeOperations.incrementAndGet(collectionName);
-        mongo().updateMulti(query, update, this.collectionName);
-    }
-
-    protected void ensureIndex(Index idx) {
-        Assert.notNull(idx, "idx can't be null.");
-        Assert.isTrue(idx.getIndexKeys().keySet().size() > 0, "idx.indexKeys are empty.");
-
-        this.mongo().indexOps(this.collectionName).ensureIndex(idx);
+        mongoTemplate.updateMulti(query, update, this.collectionName);
     }
 
     @SuppressWarnings("unchecked")
     public <T> List<T> distinct(Query query, String key) {
-        track(query);
-        return (List<T>) mongo().findDistinct(query, key, this.collectionName, clazz);
+        return (List<T>) mongoTemplate.findDistinct(query, key, this.collectionName, entityClass);
     }
 
-    protected List<String> toLowerCaseList(Collection<String> collection) {
-        if (CollectionUtils.isEmpty(collection)) {
-            return new LinkedList<>();
-        }
-
-        List<String> resultList = new LinkedList<>();
-        for (String item : collection) {
-            if (item != null) {
-                resultList.add(item.toLowerCase());
-            }
-        }
-
-        return resultList;
+    protected void remove(Query query) {
+        mongoTemplate.remove(query, entityClass);
     }
 
-    protected Set<String> toLowerCaseSet(Collection<String> collection) {
-        if (CollectionUtils.isEmpty(collection)) {
-            return new HashSet<>();
-        }
-
-        Set<String> result = new HashSet<>();
-        for (String item : collection) {
-            if (item != null) {
-                result.add(item.toLowerCase());
-            }
-        }
-
-        return result;
+    protected boolean exists(Query query) {
+        return mongoTemplate.exists(query, entityClass);
     }
 
-
-    public List<T> findAll(int skip, int limit) {
-        Query query = new Query().skip(skip).limit(limit).with(Sort.by(Sort.Direction.ASC, "_id"));
-        track(query);
-        return this.findAll(query);
+    protected Collection<T> aggregate(final Aggregation aggregation) {
+        final AggregationResults<T> aggregationResults = mongoTemplate.aggregate(aggregation, entityClass, entityClass);
+        return aggregationResults.getMappedResults();
     }
 
-    public String getCollection() {
-        return this.collectionName;
-    }
-
-    public Class<T> getCollectionClass() {
-        return clazz;
-    }
-
-    private void track(Query query) {
-        //implement query tracking
-    }
-
-    protected void increasePreventedUpdatesCount() {
-        writeOperations.incrementAndGet(collectionPreventedUpdates);
-    }
-
-    protected MongoOperations mongo() {
-        return this.template;
+    public String concatenateNestedField(String... fields) {
+        return String.join(".", fields);
     }
 }

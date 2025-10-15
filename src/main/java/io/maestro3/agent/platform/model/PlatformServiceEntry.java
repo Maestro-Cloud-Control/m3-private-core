@@ -17,92 +17,155 @@
 
 package io.maestro3.agent.platform.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
-/**
- * @author Serhii Akhmetshin
- * Created: 23/02/2024
- */
-@Document(collection = "PlatformServiceEntry")
+import java.util.UUID;
+
+@Document(collection = "PlatformServiceEntries")
 public class PlatformServiceEntry {
-    public static final String ID_FIELD = "id";
+
     @Id
-    private String id;
-    private String tenant;
-    private String region;
-    private String owner;
+    private String serviceEntryId = UUID.randomUUID().toString();
+    @Field(Fields.SERVICE_NAME)
+    @JsonProperty(Fields.SERVICE_NAME)
     private String serviceName;
-    private String stackId;
-    private long creationDate;
+    @Field(Fields.DEPLOYMENT_INFO)
+    @JsonProperty(Fields.DEPLOYMENT_INFO)
+    private PlatformServiceDeploymentInfo deploymentInfo;
+    @Field(Fields.CLOUD)
+    @JsonProperty(Fields.CLOUD)
+    private String cloud;
+    @Field(Fields.TENANT_NAME)
+    @JsonProperty(Fields.TENANT_NAME)
+    private String tenantName;
+    @Field(Fields.TENANT_DISPLAY_NAME)
+    @JsonProperty(Fields.TENANT_DISPLAY_NAME)
+    private String tenantDisplayName;
+    @Field(Fields.REGION_NAME)
+    @JsonProperty(Fields.REGION_NAME)
+    private String regionName;
+    @Field(Fields.SERVICE_URL)
+    @JsonProperty(Fields.SERVICE_URL)
+    private String serviceUrl;
+    @Field(Fields.OWNER)
+    @JsonProperty(Fields.OWNER)
+    private String owner;
+    @Field(Fields.STATE)
+    @JsonProperty(Fields.STATE)
+    private PlatformServiceEntryState state;
 
     public PlatformServiceEntry() {
     }
 
-    public PlatformServiceEntry(String id, String tenant, String region, String owner, String serviceName,
-                                String stackId, long creationDate) {
-        this.id = id;
-        this.tenant = tenant;
-        this.region = region;
-        this.owner = owner;
-        this.creationDate = creationDate;
-        this.serviceName = serviceName;
-        this.stackId = stackId;
-    }
 
-    public String getId() {
-        return id;
-    }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getTenant() {
-        return tenant;
-    }
-
-    public void setTenant(String tenant) {
-        this.tenant = tenant;
-    }
-
-    public String getRegion() {
-        return region;
-    }
-
-    public void setRegion(String region) {
-        this.region = region;
-    }
-
-    public String getOwner() {
-        return owner;
-    }
-
-    public void setOwner(String owner) {
-        this.owner = owner;
+    public String getServiceEntryId() {
+        return serviceEntryId;
     }
 
     public String getServiceName() {
         return serviceName;
     }
 
-    public void setServiceName(String serviceName) {
+    public PlatformServiceEntry withServiceName(String serviceName) {
         this.serviceName = serviceName;
+        return this;
     }
 
-    public String getStackId() {
-        return stackId;
+    public PlatformServiceEntry withServiceEntryId(String serviceEntryId) {
+        this.serviceEntryId = serviceEntryId;
+        return this;
     }
 
-    public void setStackId(String stackId) {
-        this.stackId = stackId;
+    public PlatformServiceDeploymentInfo getDeploymentInfo() {
+        return deploymentInfo;
     }
 
-    public long getCreationDate() {
-        return creationDate;
+    public PlatformServiceEntry withDeploymentInfo(PlatformServiceDeploymentInfo deploymentInfo) {
+        this.deploymentInfo = deploymentInfo;
+        return this;
     }
 
-    public void setCreationDate(long creationDate) {
-        this.creationDate = creationDate;
+    public String getCloud() {
+        return cloud;
+    }
+
+    public PlatformServiceEntry withCloud(String cloud) {
+        this.cloud = cloud;
+        return this;
+    }
+
+    public String getTenantName() {
+        return tenantName;
+    }
+
+    public PlatformServiceEntry withTenantName(String tenantName) {
+        this.tenantName = tenantName;
+        return this;
+    }
+
+    public String getTenantDisplayName() {
+        return tenantDisplayName;
+    }
+
+    public PlatformServiceEntry withTenantDisplayName(String tenantDisplayName) {
+        this.tenantDisplayName = tenantDisplayName;
+        return this;
+    }
+
+    public String getRegionName() {
+        return regionName;
+    }
+
+    public PlatformServiceEntry withRegionName(String regionName) {
+        this.regionName = regionName;
+        return this;
+    }
+
+    public String getServiceUrl() {
+        return serviceUrl;
+    }
+
+    public PlatformServiceEntry withServiceUrl(String serviceUrl) {
+        this.serviceUrl = serviceUrl;
+        return this;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public PlatformServiceEntry withOwner(String owner) {
+        this.owner = owner;
+        return this;
+    }
+
+    public PlatformServiceEntryState getState() {
+        return state;
+    }
+
+    public PlatformServiceEntry withState(PlatformServiceEntryState state) {
+        this.state = state;
+        return this;
+    }
+
+    public static final class Fields {
+        public static final String SERVICE_ENTRY_ID = "serviceEntryId";
+        public static final String SERVICE_NAME = "serviceName";
+        public static final String DEPLOYMENT_INFO = "deploymentInfo";
+        public static final String CLOUD = "cloud";
+        public static final String TENANT_NAME = "tenantName";
+        public static final String TENANT_DISPLAY_NAME = "tenantDisplayName";
+        public static final String REGION_NAME = "regionName";
+        public static final String SERVICE_URL = "serviceUrl";
+        public static final String OWNER = "owner";
+        public static final String STATE = "state";
+
+        private Fields() {
+            throw new UnsupportedOperationException("Class is not designed for an instantiation");
+        }
     }
 }

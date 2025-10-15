@@ -12,17 +12,17 @@ public interface ITerraformStackDao {
 
     Optional<TerraformStack> findByStackId(String stackId);
 
-    void save(TerraformStack terraformStack);
+    TerraformStack save(TerraformStack terraformStack);
 
     Collection<TerraformStack> findByTemplateName(String tenantName, String templateName);
 
     Optional<TerraformStack> findByTemplateName(String tenantName, String templateName, String stackId);
+
+    Optional<TerraformStack> findByServiceEntryId(String serviceEntryId);
 
     void updateStack(String stackId, Map<String, Object> fieldsToUpdate);
 
     Collection<TerraformStack> findByTenant(String tenantName, Collection<String> stackIds);
 
     void delete(String stackId);
-
-    Optional<TerraformStack> findByEntryID(String entryId);
 }

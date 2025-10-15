@@ -1,7 +1,8 @@
 package io.maestro3.agent.terraform.model;
 
-import team.syndicate.terraform.integration.model.TemplateStatus;
-import team.syndicate.terraform.integration.model.TerraformTemplateStorageInfo;
+
+import team.syndicate.terraform.engine.terraform.integration.model.TemplateStatus;
+import team.syndicate.terraform.engine.terraform.integration.model.TerraformTemplateStorageInfo;
 
 import java.util.Set;
 

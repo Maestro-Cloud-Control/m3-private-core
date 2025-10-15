@@ -42,6 +42,8 @@ public interface IRegionRepository<REGION extends IRegion> {
 
     REGION findByAliasInCloud(String alias);
 
+    IRegion findByAliasInCloud(String alias, String cloud);
+
     List<IAmqpSupportedRegion> findAllAmqpRegions();
 
     List<IRegion> findByCloud(String cloudName);

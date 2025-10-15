@@ -23,6 +23,8 @@ public interface ITenant {
 
     String getTenantAlias();
 
+    String getName();
+
     TenantState getTenantState();
 
     boolean isDescribeAllInstances();

@@ -17,26 +17,14 @@
 
 package io.maestro3.agent.platform;
 
-import io.maestro3.agent.platform.model.PlatformService;
-import io.maestro3.agent.platform.model.PlatformServiceEntry;
-import io.maestro3.agent.tf.integration.model.TemplateStatus;
+
+import team.syndicate.terraform.engine.terraform.integration.model.TemplateStatus;
 
 /**
  * @author Serhii Akhmetshin
  * Created: 23/02/2024
  */
 public interface IPlatformServiceFacade {
-    PlatformService findServiceByName(String name);
-
-    PlatformServiceEntry findServiceEntryById(String id);
-
-    void saveEntry(PlatformService service);
-
-    void saveEntry(PlatformServiceEntry service);
-
-    void deleteService(String name);
-
-    String getRelatedStack(String entryId);
 
     void deleteEntry(String id);
 

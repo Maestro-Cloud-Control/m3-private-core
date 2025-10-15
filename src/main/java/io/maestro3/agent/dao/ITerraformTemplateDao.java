@@ -1,6 +1,7 @@
 package io.maestro3.agent.dao;
 
 import io.maestro3.agent.terraform.model.TerraformTemplate;
+import io.maestro3.agent.terraform.model.TerraformTemplateDbUpdateParameters;
 
 import java.util.Collection;
 import java.util.Map;
@@ -15,7 +16,7 @@ public interface ITerraformTemplateDao {
 
     Collection<TerraformTemplate> findByNamesAndTenant(String tenantName, Collection<String> names);
 
-    void save(TerraformTemplate terraformTemplate);
+    TerraformTemplate save(TerraformTemplate terraformTemplate);
 
     boolean updateTemplateSet(String templateId, Map<String, Object> fieldsToUpdate);
 
@@ -26,4 +27,10 @@ public interface ITerraformTemplateDao {
     void pollQueuedTask(String templateId);
 
     Collection<TerraformTemplate> findTemplatesWithQueuedTasks();
+
+    Optional<TerraformTemplate> findSystemTemplateByName(String templateName);
+
+    String concatenateNestedField(String... fields);
+
+    void updateTemplate(String templateId, TerraformTemplateDbUpdateParameters parameters);
 }

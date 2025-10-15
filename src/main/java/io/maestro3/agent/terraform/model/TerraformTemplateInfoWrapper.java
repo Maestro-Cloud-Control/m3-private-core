@@ -1,15 +1,17 @@
 package io.maestro3.agent.terraform.model;
 
-import team.syndicate.terraform.integration.model.ITerraformTemplateInfo;
-import team.syndicate.terraform.integration.model.TemplateStatus;
-import team.syndicate.terraform.integration.model.TerraformTemplateStorageInfo;
-import team.syndicate.terraform.integration.model.TerraformTemplateVariable;
-import team.syndicate.terraform.integration.model.TerraformUserVariable;
+import team.syndicate.terraform.engine.management.interfaces.model.ITerraformEngineTemplateInfo;
+import team.syndicate.terraform.engine.terraform.integration.model.TemplateStatus;
+import team.syndicate.terraform.engine.terraform.integration.model.TerraformTemplateStorageInfo;
+import team.syndicate.terraform.engine.terraform.integration.model.TerraformTemplateVariable;
+import team.syndicate.terraform.engine.terraform.integration.model.TerraformUserVariable;
+import team.syndicate.terraform.engine.terraform.integration.task.TerraformTask;
 
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
-public class TerraformTemplateInfoWrapper implements ITerraformTemplateInfo {
+public class TerraformTemplateInfoWrapper implements ITerraformEngineTemplateInfo {
 
     private final TerraformTemplate template;
 
@@ -38,8 +40,18 @@ public class TerraformTemplateInfoWrapper implements ITerraformTemplateInfo {
     }
 
     @Override
+    public String getTenantDisplayName() {
+        return template.getTenantDisplayName();
+    }
+
+    @Override
     public String getCloud() {
         return template.getCloud();
+    }
+
+    @Override
+    public String getOwner() {
+        return template.getOwner();
     }
 
     @Override
@@ -48,13 +60,13 @@ public class TerraformTemplateInfoWrapper implements ITerraformTemplateInfo {
     }
 
     @Override
-    public void setStatus(TemplateStatus status) {
-        template.withStatus(status);
+    public Map<String, TerraformTask> getTasksInProgress() {
+        return template.getTasksInProgress();
     }
 
     @Override
-    public String getOwner() {
-        return template.getOwner();
+    public Queue<String> getAutoTaskQueue() {
+        return template.getAutoTaskQueue();
     }
 
     @Override
@@ -68,17 +80,12 @@ public class TerraformTemplateInfoWrapper implements ITerraformTemplateInfo {
     }
 
     @Override
-    public void setProviders(Set<String> providers) {
-        template.withProviders(providers);
-    }
-
-    @Override
     public String getTemplateFileName() {
         return template.getTemplateFileName();
     }
 
     @Override
-    public Map<String, TerraformUserVariable> getVariables() {
+    public Map<String, TerraformUserVariable> getUserVariables() {
         return template.getVariables();
     }
 
@@ -88,13 +95,8 @@ public class TerraformTemplateInfoWrapper implements ITerraformTemplateInfo {
     }
 
     @Override
-    public void setTemplateVariables(Map<String, TerraformTemplateVariable> templateVariables) {
-        template.withTemplateVariables(templateVariables);
-    }
-
-    @Override
-    public void setUserVariables(Map<String, TerraformUserVariable> userVariables) {
-        template.withVariables(userVariables);
+    public String buildLockIdentifier() {
+        return "TerraformTemplate-" + getTemplateId();
     }
 
     @Override

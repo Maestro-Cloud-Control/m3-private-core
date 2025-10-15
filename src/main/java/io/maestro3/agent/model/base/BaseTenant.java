@@ -17,12 +17,14 @@
 
 package io.maestro3.agent.model.base;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.springframework.data.annotation.Id;
 
 import javax.validation.constraints.NotBlank;
 
 
 public abstract class BaseTenant implements ITenant {
+    public static final String NAME_SPLITERATOR = "::";
 
     @Id
     private String id;
@@ -123,6 +125,12 @@ public abstract class BaseTenant implements ITenant {
     @Override
     public void setSkipHealthCheck(boolean skipHealthCheck) {
         this.skipHealthCheck = skipHealthCheck;
+    }
+
+    @JsonIgnore
+    @Override
+    public String getName() {
+        return regionId + NAME_SPLITERATOR + tenantAlias;
     }
 
     @Override

@@ -1,11 +1,10 @@
 package io.maestro3.agent.dao.impl;
 
 import com.mongodb.client.result.UpdateResult;
-import io.maestro3.agent.dao.BaseTemplatesDao;
+import io.maestro3.agent.dao.BaseDao;
 import io.maestro3.agent.dao.ITerraformTemplateDao;
-import io.maestro3.agent.terraform.model.TerraformStack;
 import io.maestro3.agent.terraform.model.TerraformTemplate;
-import io.maestro3.sdk.internal.util.CollectionUtils;
+import io.maestro3.agent.terraform.model.TerraformTemplateDbUpdateParameters;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -13,6 +12,7 @@ import org.springframework.data.mongodb.core.query.CriteriaDefinition;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Component;
+import team.syndicate.terraform.engine.utils.CollectionUtils;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -20,11 +20,11 @@ import java.util.Map;
 import java.util.Optional;
 
 @Component
-public class TerraformTemplateDao extends BaseTemplatesDao<TerraformTemplate> implements ITerraformTemplateDao {
+public class TerraformTemplateDao extends BaseDao<TerraformTemplate> implements ITerraformTemplateDao {
 
     @Autowired
-    public TerraformTemplateDao(MongoTemplate mongoTemplate) {
-        super(mongoTemplate, TerraformTemplate.class);
+    public TerraformTemplateDao() {
+        super("TerraformTemplates", TerraformTemplate.class);
     }
 
     private static Query getTemplateIdQuery(String templateId) {
@@ -47,12 +47,6 @@ public class TerraformTemplateDao extends BaseTemplatesDao<TerraformTemplate> im
         CriteriaDefinition searchCriteria = Criteria.where(TerraformTemplate.Fields.NAME).is(name)
                 .and(TerraformTemplate.Fields.TENANT_NAME).is(tenantName.toUpperCase());
         return super.findOne(Query.query(searchCriteria));
-    }
-
-    @Override
-    public void save(TerraformTemplate template){
-        template.withTenantName(template.getTenantName().toUpperCase());
-        super.save(template);
     }
 
     @Override
@@ -102,5 +96,44 @@ public class TerraformTemplateDao extends BaseTemplatesDao<TerraformTemplate> im
         CriteriaDefinition searchCriteria = Criteria.where(TerraformTemplate.Fields.TASKS_IN_PROGRESS).is(Collections.emptyMap())
                 .and(TerraformTemplate.Fields.AUTO_TASK_QUEUE).gt(Collections.emptyList());
         return super.find(Query.query(searchCriteria));
+    }
+
+    @Override
+    public Optional<TerraformTemplate> findSystemTemplateByName(final String templateName) {
+        CriteriaDefinition searchCriteria = Criteria.where(TerraformTemplate.Fields.NAME).is(templateName)
+                .and(TerraformTemplate.Fields.SYSTEM).is(true);
+        return super.findOne(Query.query(searchCriteria));
+    }
+
+    @Override
+    public void updateTemplate(final String templateId, final TerraformTemplateDbUpdateParameters parameters) {
+        final Criteria searchCriteria = Criteria.where(TerraformTemplate.Fields.TEMPLATE_ID).is(templateId);
+        final Update update = new Update();
+        Optional.ofNullable(parameters.getNewTemplateStatus())
+                .ifPresent(statusParameter -> addSetClause(update, TerraformTemplate.Fields.STATUS, statusParameter));
+        Optional.ofNullable(parameters.getNewProviders())
+                .ifPresent(providersParameter -> addSetClause(update, TerraformTemplate.Fields.PROVIDERS, providersParameter));
+        Optional.ofNullable(parameters.getNewTemplateVariables())
+                .ifPresent(templateVariablesParameter -> addSetClause(update, TerraformTemplate.Fields.TEMPLATE_VARIABLES, templateVariablesParameter));
+        Optional.ofNullable(parameters.getNewUserVariables())
+                .ifPresent(userVariablesParameter -> addSetClause(update, TerraformTemplate.Fields.VARIABLES, userVariablesParameter));
+        Optional.ofNullable(parameters.getNewTask())
+                .map(TerraformTemplateDbUpdateParameters.UpdateParameter::getParameterValue)
+                .ifPresent(newTask -> {
+                    final String field = concatenateNestedField(TerraformTemplate.Fields.TASKS_IN_PROGRESS, newTask.getTaskId());
+                    update.set(field, newTask.getTask());
+                });
+        Optional.ofNullable(parameters.getNewAutoTask())
+                .map(TerraformTemplateDbUpdateParameters.UpdateParameter::getParameterValue)
+                .ifPresent(autoTask -> update.addToSet(TerraformTemplate.Fields.AUTO_TASK_QUEUE, autoTask));
+        Optional.ofNullable(parameters.getNewStorageInfo())
+                .ifPresent(storageInfoParameter -> addSetClause(update, TerraformTemplate.Fields.STORAGE_INFO, storageInfoParameter));
+        super.updateFirst(Query.query(searchCriteria), update);
+    }
+
+    private <T> void addSetClause(final Update update,
+                                  final String fieldName,
+                                  final TerraformTemplateDbUpdateParameters.UpdateParameter<T> updateParameter) {
+        update.set(fieldName, updateParameter.getParameterValue());
     }
 }

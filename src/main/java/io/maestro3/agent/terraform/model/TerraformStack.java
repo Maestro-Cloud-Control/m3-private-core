@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
-import team.syndicate.terraform.integration.model.TemplateStatus;
-import team.syndicate.terraform.integration.model.TerraformUserVariable;
+import team.syndicate.terraform.engine.terraform.integration.model.TemplateStatus;
+import team.syndicate.terraform.engine.terraform.integration.model.TerraformUserVariable;
 
 import java.util.Map;
 import java.util.Set;
@@ -49,7 +49,6 @@ public class TerraformStack {
     @Field(Fields.SERVICE_ENTRY_ID)
     @JsonProperty(Fields.SERVICE_ENTRY_ID)
     private String serviceEntryId;
-
 
     public TerraformStack() {
         this.stackId = UUID.randomUUID().toString();
