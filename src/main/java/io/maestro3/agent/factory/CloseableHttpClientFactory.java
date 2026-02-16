@@ -47,33 +47,32 @@ public final class CloseableHttpClientFactory {
 
     public static HttpClient getHttpClient(String regionId, int timeout, IHttpRequestTracker requestTracker) {
         return getHttpClient(
-                timeout * 1000,
-                timeout * 2000,
-                DEFAULT_POOL_MAX_TOTAL,
-                DEFAULT_POOL_PER_ROUTE,
-                true,
-                regionId,
-                requestTracker);
+            timeout * 1000,
+            timeout * 2000,
+            DEFAULT_POOL_MAX_TOTAL,
+            DEFAULT_POOL_PER_ROUTE,
+            true,
+            regionId,
+            requestTracker);
     }
-
     public static HttpClient getHttpClient(String regionId, IHttpRequestTracker requestTracker) {
         return getHttpClient(
-                DEFAULT_CONN_TIMEOUT,
-                DEFAULT_SOCKET_TIMEOUT,
-                DEFAULT_POOL_MAX_TOTAL,
-                DEFAULT_POOL_PER_ROUTE,
-                true,
-                regionId,
-                requestTracker);
+            DEFAULT_CONN_TIMEOUT,
+            DEFAULT_SOCKET_TIMEOUT,
+            DEFAULT_POOL_MAX_TOTAL,
+            DEFAULT_POOL_PER_ROUTE,
+            true,
+            regionId,
+            requestTracker);
     }
 
     public static HttpClient getHttpClient(int timeoutSec) {
         return getHttpClient(
-                timeoutSec == 0 ? DEFAULT_CONN_TIMEOUT : timeoutSec * 1000,
-                DEFAULT_SOCKET_TIMEOUT,
-                DEFAULT_POOL_MAX_TOTAL,
-                DEFAULT_POOL_PER_ROUTE,
-                true);
+            timeoutSec == 0 ? DEFAULT_CONN_TIMEOUT : timeoutSec * 1000,
+            DEFAULT_SOCKET_TIMEOUT,
+            DEFAULT_POOL_MAX_TOTAL,
+            DEFAULT_POOL_PER_ROUTE,
+            true);
     }
 
     public static HttpClient getHttpClient(RequestConfig config,
@@ -85,21 +84,9 @@ public final class CloseableHttpClientFactory {
         connectionManager.setMaxTotal(poolMaxTotal);
         connectionManager.setDefaultMaxPerRoute(poolPerRoute);
         return new TrackingHttpClientWrapper(HttpClientBuilder.create()
-                .setConnectionManager(connectionManager)
-                .setDefaultRequestConfig(config)
-                .build(), requestTracker, regionId);
-    }
-
-    public static HttpClient getHttpClient(RequestConfig config,
-                                           String regionId,
-                                           IHttpRequestTracker requestTracker) {
-        PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager(getSocketFactoryRegistry());
-        connectionManager.setMaxTotal(DEFAULT_POOL_MAX_TOTAL);
-        connectionManager.setDefaultMaxPerRoute(DEFAULT_POOL_PER_ROUTE);
-        return new TrackingHttpClientWrapper(HttpClientBuilder.create()
-                .setConnectionManager(connectionManager)
-                .setDefaultRequestConfig(config)
-                .build(), requestTracker, regionId);
+            .setConnectionManager(connectionManager)
+            .setDefaultRequestConfig(config)
+            .build(), requestTracker, regionId);
     }
 
     public static HttpClient getHttpClient(int connectionTimeout,
@@ -110,8 +97,8 @@ public final class CloseableHttpClientFactory {
                                            String regionId,
                                            IHttpRequestTracker requestTracker) {
         RequestConfig.Builder requestBuilder = RequestConfig.custom()
-                .setConnectTimeout(connectionTimeout)
-                .setSocketTimeout(socketTimeout);
+            .setConnectTimeout(connectionTimeout)
+            .setSocketTimeout(socketTimeout);
 
         PoolingHttpClientConnectionManager connectionManager;
         if (addFakeFactory) {
@@ -122,10 +109,10 @@ public final class CloseableHttpClientFactory {
         connectionManager.setMaxTotal(poolMaxTotal);
         connectionManager.setDefaultMaxPerRoute(poolPerRoute);
         return new TrackingHttpClientWrapper(HttpClientBuilder.create()
-                .setConnectionManager(connectionManager)
-                .setDefaultRequestConfig(requestBuilder.build())
-                .build(),
-                requestTracker, regionId);
+            .setConnectionManager(connectionManager)
+            .setDefaultRequestConfig(requestBuilder.build())
+            .build(),
+            requestTracker, regionId);
     }
 
     public static HttpClient getHttpClient(int connectionTimeout,
@@ -134,8 +121,8 @@ public final class CloseableHttpClientFactory {
                                            int poolPerRoute,
                                            boolean addFakeFactory) {
         RequestConfig.Builder requestBuilder = RequestConfig.custom()
-                .setConnectTimeout(connectionTimeout)
-                .setSocketTimeout(socketTimeout);
+            .setConnectTimeout(connectionTimeout)
+            .setSocketTimeout(socketTimeout);
 
         PoolingHttpClientConnectionManager connectionManager;
         if (addFakeFactory) {
@@ -146,26 +133,18 @@ public final class CloseableHttpClientFactory {
         connectionManager.setMaxTotal(poolMaxTotal);
         connectionManager.setDefaultMaxPerRoute(poolPerRoute);
         return HttpClientBuilder.create()
-                .setConnectionManager(connectionManager)
-                .setDefaultRequestConfig(requestBuilder.build())
-                .build();
-    }
-
-    public static HttpClient getHttpClient(boolean addFakeFactory) {
-        return getHttpClient(DEFAULT_CONN_TIMEOUT,
-                DEFAULT_SOCKET_TIMEOUT,
-                DEFAULT_POOL_MAX_TOTAL,
-                DEFAULT_POOL_PER_ROUTE,
-                addFakeFactory);
+            .setConnectionManager(connectionManager)
+            .setDefaultRequestConfig(requestBuilder.build())
+            .build();
     }
 
     private static Registry<ConnectionSocketFactory> getSocketFactoryRegistry() {
         try {
             return RegistryBuilder
-                    .<ConnectionSocketFactory>create()
-                    .register("HTTP", PlainConnectionSocketFactory.getSocketFactory())
-                    .register("HTTPS", FakeSSLConnectionSocketFactory.getInstance())
-                    .build();
+                .<ConnectionSocketFactory>create()
+                .register("HTTP", PlainConnectionSocketFactory.getSocketFactory())
+                .register("HTTPS", FakeSSLConnectionSocketFactory.getInstance())
+                .build();
         } catch (Exception e) {
             LOG.error("Registry creation failed", e);
             throw new IllegalStateException("Registry creation failed", e);

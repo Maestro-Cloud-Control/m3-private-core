@@ -31,6 +31,10 @@ public interface IntegrationChannels {
         String OS_BYTES = "in.open_stack.bytes.channel";
         String OS_NOTIFICATIONS = "in.open_stack.notifications.channel";
         String OS_NOTIFICATIONS_ENCODED = "in.open_stack.notifications.encoded.channel";
+
+        // VMWARE
+        String VMWARE = "in.vmware.channel";
+        String VMWARE_DESCRIBER = "in.vmware.describer.channel";
     }
 
     interface Outbound {

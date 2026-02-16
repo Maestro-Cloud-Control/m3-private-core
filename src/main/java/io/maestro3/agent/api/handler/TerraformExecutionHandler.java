@@ -24,8 +24,6 @@ import io.maestro3.sdk.v3.core.ActionType;
 import io.maestro3.sdk.v3.model.SdkCloud;
 import io.maestro3.sdk.v3.model.terraform.SdkPrivateAgentConsoleExecutionResponse;
 import io.maestro3.sdk.v3.request.agent.SdkPrivateAgentConsoleExecutionRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -42,7 +40,7 @@ import java.util.Set;
 
 @Component
 public class TerraformExecutionHandler extends AbstractM3ApiHandler<SdkPrivateAgentConsoleExecutionRequest, SdkPrivateAgentConsoleExecutionResponse> {
-    private static final Logger LOG = LoggerFactory.getLogger(TerraformExecutionHandler.class);
+
     private final IConsoleCommandEngine consoleCommandEngine;
 
     @Value("${flag.enable.tf.filepath.replacer:false}")
@@ -65,14 +63,14 @@ public class TerraformExecutionHandler extends AbstractM3ApiHandler<SdkPrivateAg
             Set<String> copiedFiles = copyFiles(request.getFullFileNamesWithContent());
 
             SdkPrivateAgentConsoleExecutionResponse response = new SdkPrivateAgentConsoleExecutionResponse()
-                    .withSyncedFullFilenames(copiedFiles)
-                    .withDeletedFullFileNames(deletedFiles);
+                .withSyncedFullFilenames(copiedFiles)
+                .withDeletedFullFileNames(deletedFiles);
             if (CollectionUtils.isNotEmpty(request.getCommandTokens())) {
                 CommandExecutionResult result = consoleCommandEngine.runCommand(
-                        request.getCommandTokens(), request.getEnvVariables(), replace(request.getWorkingDirectoryFullPathName()));
+                    request.getCommandTokens(), request.getEnvVariables(), replace(request.getWorkingDirectoryFullPathName()));
                 response.withPositiveResult(result.getPositiveResult())
-                        .withNegativeResult(result.getErrorResult())
-                        .withExitCode(result.getExitCode());
+                    .withNegativeResult(result.getErrorResult())
+                    .withExitCode(result.getExitCode());
             }
             Map<String, String> requestedFiles = prepareRequestedFiles(request.getRequestedFullFileNames());
             boolean dirExists = isDirExists(replace(request.getDirExists()));
@@ -82,8 +80,8 @@ public class TerraformExecutionHandler extends AbstractM3ApiHandler<SdkPrivateAg
         } catch (Exception ex) {
             LOG.error("Cannot execute command: {}", ex.getMessage(), ex);
             return new SdkPrivateAgentConsoleExecutionResponse()
-                    .withExitCode(1)
-                    .withNegativeResult(ex.getMessage());
+                .withExitCode(1)
+                .withNegativeResult(ex.getMessage());
         }
     }
 
@@ -100,8 +98,8 @@ public class TerraformExecutionHandler extends AbstractM3ApiHandler<SdkPrivateAg
             return path;
         }
         return enabledTfFilepathReplacer
-                ? path.replaceAll(replaceFrom, replaceTo)
-                : path;
+            ? path.replaceAll(replaceFrom, replaceTo)
+            : path;
     }
 
     private String replaceBack(String path) {
@@ -109,8 +107,8 @@ public class TerraformExecutionHandler extends AbstractM3ApiHandler<SdkPrivateAg
             return path;
         }
         return enabledTfFilepathReplacer
-                ? path.replaceAll(replaceTo, replaceFrom)
-                : path;
+            ? path.replaceAll(replaceTo, replaceFrom)
+            : path;
     }
 
     private Set<String> deleteFiles(String workingBaseDirectory, Set<String> toBeDeletedFullFileNames) {

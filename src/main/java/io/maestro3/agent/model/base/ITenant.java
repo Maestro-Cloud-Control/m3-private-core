@@ -23,9 +23,11 @@ public interface ITenant {
 
     String getTenantAlias();
 
-    String getName();
-
     TenantState getTenantState();
+
+    void setTenantDnsZone(String tenantDnsZone);
+
+    String getTenantDnsZone();
 
     boolean isDescribeAllInstances();
 
@@ -42,6 +44,7 @@ public interface ITenant {
     void setTenantAlias(String tenantAlias);
 
     String getRegionId();
+
 
     void setRegionId(String regionId);
 

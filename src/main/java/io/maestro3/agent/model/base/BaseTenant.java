@@ -17,14 +17,12 @@
 
 package io.maestro3.agent.model.base;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.springframework.data.annotation.Id;
 
 import javax.validation.constraints.NotBlank;
 
 
 public abstract class BaseTenant implements ITenant {
-    public static final String NAME_SPLITERATOR = "::";
 
     @Id
     private String id;
@@ -32,6 +30,7 @@ public abstract class BaseTenant implements ITenant {
     private String tenantAlias;
     @NotBlank
     private String regionId;
+    private String tenantDnsZone;
     private PrivateCloudType cloud;
     private TenantState tenantState = TenantState.UNKNOWN;
     private long lastStatusUpdate;
@@ -40,6 +39,20 @@ public abstract class BaseTenant implements ITenant {
     private boolean describeAllInstances;
 
     public BaseTenant() {
+    }
+
+    public BaseTenant(PrivateCloudType cloud) {
+        this.cloud = cloud;
+    }
+
+    @Override
+    public String getTenantDnsZone() {
+        return tenantDnsZone;
+    }
+
+    @Override
+    public void setTenantDnsZone(String tenantDnsZone) {
+        this.tenantDnsZone = tenantDnsZone;
     }
 
     @Override
@@ -52,9 +65,6 @@ public abstract class BaseTenant implements ITenant {
         this.describeAllInstances = describeAllInstances;
     }
 
-    public BaseTenant(PrivateCloudType cloud) {
-        this.cloud = cloud;
-    }
 
     @Override
     public PrivateCloudType getCloud() {
@@ -125,12 +135,6 @@ public abstract class BaseTenant implements ITenant {
     @Override
     public void setSkipHealthCheck(boolean skipHealthCheck) {
         this.skipHealthCheck = skipHealthCheck;
-    }
-
-    @JsonIgnore
-    @Override
-    public String getName() {
-        return regionId + NAME_SPLITERATOR + tenantAlias;
     }
 
     @Override

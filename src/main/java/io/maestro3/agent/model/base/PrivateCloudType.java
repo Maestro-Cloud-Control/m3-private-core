@@ -21,7 +21,7 @@ import io.maestro3.sdk.v3.model.SdkCloud;
 
 
 public enum PrivateCloudType {
-    OPEN_STACK, VMWARE, VSPHERE, NUTANIX, HYPERV, AWS;
+    OPEN_STACK, VMWARE, VSPHERE, NUTANIX, OPEN_NEBULA, HYPERV;
 
     public static PrivateCloudType fromSdkCloud(SdkCloud cloud) {
         if (cloud == null) {

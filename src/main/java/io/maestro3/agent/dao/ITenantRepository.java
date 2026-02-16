@@ -29,8 +29,6 @@ public interface ITenantRepository<TENANT extends ITenant>{
 
     List<ITenant> findByRegionId(String regionId);
 
-    ITenant findById(String id);
-
     List<ITenant> findAll();
 
     List<ITenant> findForCloud(String cloudName);

@@ -65,11 +65,14 @@ public class ListenersManagementService implements ListenersLifecycleManager, IA
     private List<IAmqpSupportedRegion> regionsToConfigureNotifications;
     private List<SimpleMessageListenerContainer> notificationsListeners;
 
-    public ListenersManagementService(@Autowired @Qualifier(IntegrationChannels.Inbound.OS_BYTES)
+    public ListenersManagementService(@Autowired @Qualifier(IntegrationChannels.Inbound.VMWARE)
+                                          MessageChannel vmwareChannel,
+                                      @Autowired @Qualifier(IntegrationChannels.Inbound.OS_BYTES)
                                           MessageChannel osChannel,
                                       @Autowired RabbitConfigurationFactory rabbitConfigurationFactory,
                                       @Autowired IAmqpRoutingService routingService) {
         this.rabbitConfigurationFactory = rabbitConfigurationFactory;
+        this.messageChannels.put(PrivateCloudType.VMWARE, vmwareChannel);
         this.messageChannels.put(PrivateCloudType.OPEN_STACK, osChannel);
         this.routingService = routingService;
 

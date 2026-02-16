@@ -37,7 +37,36 @@ public enum AdminCommandPipeline {
         AdminCommandType.OPEN_STACK_CREATE_TENANT_USER,
         AdminCommandType.OPEN_STACK_SET_TENANT_DESCRIBER_MODE,
         AdminCommandType.OPEN_STACK_SET_TENANT_MANAGEMENT
-    ));
+    )),
+
+    CONFIGURE_VMWARE_REGION("configure_vmware_region", Arrays.asList(
+        AdminCommandType.VMWARE_CREATE_REGION,
+        AdminCommandType.VMWARE_CONFIGURE_SHAPES
+    )),
+    CONFIGURE_VMWARE_TENANT("activate_vmware_tenant", Arrays.asList(
+        AdminCommandType.VMWARE_CREATE_TENANT,
+        AdminCommandType.VMWARE_UPLOAD_TEMPLATE
+    )),
+
+    CONFIGURE_VSPHERE_REGION("configure_vsphere_region", Arrays.asList(
+        AdminCommandType.VSPHERE_CREATE_REGION,
+        AdminCommandType.VSPHERE_ADD_NETWORK,
+        AdminCommandType.VSPHERE_CONFIGURE_SHAPES
+    )),
+    CONFIGURE_VSPHERE_TENANT("activate_vsphere_tenant", Arrays.asList(
+        AdminCommandType.VSPHERE_CREATE_TENANT,
+        AdminCommandType.VSPHERE_CREATE_IMAGE
+    )),
+
+    CONFIGURE_NUTANIX_REGION("configure_nutanix_region", Arrays.asList(
+        AdminCommandType.NUTANIX_CREATE_REGION,
+        AdminCommandType.NUTANIX_SET_REGION_MANAGEMENT,
+        AdminCommandType.NUTANIX_SET_REGION_SHAPE,
+        AdminCommandType.NUTANIX_CREATE_TENANT,
+        AdminCommandType.NUTANIX_CREATE_IMAGE
+    )),
+
+    ;
 
     private final String name;
     private final List<AdminCommandType> commandTypes;

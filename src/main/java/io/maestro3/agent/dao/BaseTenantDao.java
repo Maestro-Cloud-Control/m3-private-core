@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Maestro Cloud Control LLC
+ * Copyright 2026 Maestro Cloud Control LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,12 +61,6 @@ public abstract class BaseTenantDao<TENANT extends ITenant> implements ITenantRe
     }
 
     @Override
-    public ITenant findById(String id) {
-        Criteria criteria = Criteria.where("id").is(id);
-        return template.findOne(Query.query(criteria), ITenant.class, COLLECTION);
-    }
-
-    @Override
     public void save(ITenant tenant) {
         template.save(tenant, COLLECTION);
     }
@@ -101,8 +95,7 @@ public abstract class BaseTenantDao<TENANT extends ITenant> implements ITenantRe
         Criteria criteria = Criteria.where("tenantAlias").is(tenantAlias)
             .and("regionId").is(regionId)
             .and("cloud").is(cloudType.toString());
-        ITenant one = template.findOne(Query.query(criteria), ITenant.class, COLLECTION);
-        return (TENANT) one;
+        return (TENANT) template.findOne(Query.query(criteria), ITenant.class, COLLECTION);
     }
 
     @Override
